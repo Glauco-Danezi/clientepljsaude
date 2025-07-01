@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informações dos Clientes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        #searchBar {
+            width: 100%;
+            padding: 12px 20px;
+            margin-bottom: 25px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        #searchBar:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: left;
+            word-wrap: break-word;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tbody tr:hover {
+            cursor: default;
+        }
+        tbody tr td:first-child:hover {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #007bff;
+        }
+        .no-data {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+        #loadingMessage {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #555;
+            display: none;
+        }
+
+        /* Modal Styles (for client details - read-only now) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-content h2 {
+            color: #007bff;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .modal-content p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .modal-content strong {
+            color: #333;
+        }
+        .modal-content .section-title {
+            color: #0056b3;
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .modal-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .modal-content ul li {
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .modal-content ul li p {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Informações dos Clientes</h1>
+
+        <p style="text-align: center; margin-bottom: 25px; font-style: italic; color: #555;">
+            Os dados dos clientes são carregados de uma fonte centralizada (Google Planilhas) e são apenas para leitura.
+        </p>
+
+        <input type="text" id="searchBar" onkeyup="filterTable()" placeholder="Pesquisar por qualquer informação..." style="display: none;">
+        <p id="birthdayStatus" style="text-align: center; margin-top: 15px; margin-bottom: 25px; font-style: italic; color: #555; display: none;"></p>
+
+        <table id="clientsTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>Data de Nascimento</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+        <div id="noResults" class="no-data" style="display: none;">Nenhum cliente encontrado com o termo de busca.</div>
+        <div id="loadingMessage" style="display: block;">Carregando dados dos clientes...</div>
+        
+    </div>
+
+    <div id="clientDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modalClientName"></h2>
+            <div id="modalClientDetails">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const clientsTableBody = document.querySelector('#clientsTable tbody');
+        const noResultsDiv = document.getElementById('noResults');
+        const searchBar = document.getElementById('searchBar');
+        const clientsTable = document.getElementById('clientsTable');
+        const clientDetailsModal = document.getElementById('clientDetailsModal');
+        const closeModalButton = document.querySelector('.close-button');
+        const modalClientName = document.getElementById('modalClientName');
+        const modalClientDetails = document.getElementById('modalClientDetails');
+        const birthdayStatusElement = document.getElementById('birthdayStatus');
+        const loadingMessage = document.getElementById('loadingMessage');
+
+        // URL do Google Planilhas - Use a URL que você publicou como CSV!
+        const GOOGLE_SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTANucb4lmzyj5kbCPpgnS9afpThIthXVAoYj4qZW-b_6O35d-sFuAzODLBhnUim0d3uZ7NMKgdkF0q/pub?gid=0&single=true&output=csv';
+
+        let allClientsData = []; 
+
+        function parseCSVData(csvText) {
+            console.log("Iniciando parseamento CSV...");
+            console.log("Conteúdo CSV bruto recebido (primeiros 500 chars):", csvText.substring(0, 500) + "..."); 
+
+            const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            if (lines.length === 0) {
+                console.warn("CSV está vazio ou não tem linhas válidas após trim/filter.");
+                return [];
+            }
+
+            const headers = lines[0].split(',').map(header => header.trim());
+            console.log("Cabeçalhos detectados:", headers);
+            const clients = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(value => value.trim());
+                if (values.length !== headers.length) {
+                    console.warn(`Linha ${i + 1} ignorada: número de valores (${values.length}) não corresponde ao número de cabeçalhos (${headers.length}). Linha: "${lines[i]}"`);
+                    continue; // Pula linhas mal formatadas
+                }
+
+                const client = {
+                    comissoes: [], // Não é preenchido automaticamente pelo CSV simples
+                    dependentes: [], // Não é preenchido automaticamente pelo CSV simples
+                    status: "Ativo", 
+                    timestamp: Date.now() 
+                };
+
+                headers.forEach((header, index) => {
+                    const value = values[index];
+                    switch (header.toLowerCase()) {
+                        case 'segurado':
+                        case 'nome completo':
+                        case 'nomecliente':
+                            client.segurado = value;
+                            client.nomeCompleto = value;
+                            client.nomeCliente = value;
+                            break;
+                        case 'telefone':
+                        case 'fonecelular':
+                            client.foneCelular = value;
+                            break;
+                        case 'nascimento':
+                        case 'datanascimento':
+                            client.nascimento = value;
+                            break;
+                        case 'email':
+                            client.email = value;
+                            break;
+                        case 'documento':
+                            client.documento = value;
+                            break;
+                        case 'cpf':
+                            client.cpf = value;
+                            break;
+                        case 'mae':
+                            client.mae = value;
+                            break;
+                        case 'tipo':
+                            client.tipo = value;
+                            break;
+                        case 'plano':
+                            client.plano = value;
+                            break;
+                        case 'carteirinha':
+                            client.carteirinha = value;
+                            break;
+                        case 'cep':
+                            client.cep = value;
+                            break;
+                        case 'endereco':
+                            client.endereco = value;
+                            break;
+                        case 'bairro':
+                            client.bairro = value;
+                            break;
+                        case 'cidade':
+                            client.cidade = value;
+                            break;
+                        case 'uf':
+                            client.uf = value;
+                            break;
+                        // Adicione mais mapeamentos se houver outras colunas relevantes em sua planilha
+                    }
+                });
+                clients.push(client);
+            }
+            console.log("Parseamento CSV concluído. Número de clientes encontrados:", clients.length);
+            return clients;
+        }
+
+        function populateTable(clientsData) {
+            console.log("Iniciando populateTable com", clientsData.length, "clientes.");
+            clientsTableBody.innerHTML = ''; 
+            if (clientsData.length === 0) {
+                clientsTableBody.innerHTML = '<tr><td colspan="4" class="no-data">Nenhum dado de cliente encontrado. Verifique a Planilha do Google ou o formato do CSV.</td></tr>'; 
+                console.log("Nenhum dado de cliente para popular a tabela.");
+                return;
+            }
+            
+            allClientsData = [...clientsData].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); 
+            console.log("Dados de clientes após ordenação:", allClientsData);
+
+            allClientsData.forEach((client, index) => {
+                const row = clientsTableBody.insertRow();
+                const nameCell = row.insertCell();
+                nameCell.textContent = client.segurado || client.nomeCliente || 'N/A';
+                nameCell.style.fontWeight = 'bold';
+                nameCell.onclick = () => showClientDetails(client); 
+                row.insertCell().textContent = client.foneCelular || 'N/A';
+                row.insertCell().textContent = client.nascimento || 'N/A';
+                row.insertCell().textContent = client.email || 'N/A';
+            });
+
+            searchBar.style.display = 'block';
+            clientsTable.style.display = 'table';
+            checkBirthdays(allClientsData); 
+            console.log("Tabela populada e visível.");
+        }
+
+        function showClientDetails(client) {
+            console.log("Exibindo detalhes do cliente:", client.segurado || client.nomeCliente);
+            modalClientName.textContent = client.segurado || 'N/A';
+
+            let detailsHtml = `
+                <p><strong>Documento:</strong> ${client.documento || ''}</p>
+                <p><strong>Email:</strong> ${client.email || ''}</p>
+                <p><strong>Telefone Celular:</strong> ${client.foneCelular || ''}</p>
+                
+                <h3 class="section-title">Endereço</h3>
+                <p><strong>CEP:</strong> ${client.cep || ''}</p>
+                <p><strong>Endereço:</strong> ${client.endereco || ''}</p>
+                <p><strong>Bairro:</strong> ${client.bairro || ''}</p>
+                <p><strong>Cidade/UF:</strong> ${client.cidade || ''} / ${client.uf || ''}</p>
+            `;
+
+            detailsHtml += '<h3 class="section-title">Dados Pessoais e Dependentes</h3><ul>';
+            
+            detailsHtml += `
+                <li>
+                    <p><strong>Nome:</strong> ${client.nomeCliente || ''} (Tipo: ${client.tipo || 'Titular'})</p>
+                    <p><strong>CPF:</strong> ${client.cpf || ''}</p>
+                    <p><strong>Mãe:</strong> ${client.mae || ''}</p>
+                    <p><strong>Nascimento:</strong> ${client.nascimento || ''}</p>
+                    <p><strong>Plano:</strong> ${client.plano || ''}</p>
+                    <p><strong>Carteirinha:</strong> ${client.carteirinha || ''}</p>
+                </li>
+            `;
+
+            if (client.dependentes && client.dependentes.length > 0) {
+                client.dependentes.forEach((dependent, depIndex) => {
+                    detailsHtml += `
+                        <li>
+                            <p><strong>Dependente ${depIndex + 1}:</strong></p>
+                            <p>Nome: ${dependent.nome || 'N/A'} (Tipo: ${dependent.tipo || 'N/A'})</p>
+                            <p>CPF: ${dependent.cpf || 'N/A'}</p>
+                            <p>Mãe: ${dependent.mae || 'N/A'}</p>
+                            <p>Nascimento: ${dependent.nascimento || 'N/A'}</p>
+                            <p>Plano: ${dependent.plano || 'N/A'}</p>
+                            <p>Carteirinha: ${dependent.carteirinha || 'N/A'}</p>
+                        </li>
+                    `;
+                });
+            } else {
+                 detailsHtml += '<li><p>Nenhum dado de dependente encontrado (o parser CSV simples não inclui detalhes de dependentes).<br>Se você precisa de dependentes, a planilha precisa ter uma coluna JSON para eles, ou considerar outro formato de dados.</p></li>';
+            }
+            detailsHtml += '</ul>';
+
+            if (client.comissoes && client.comissoes.length > 0) {
+                detailsHtml += '<h3 class="section-title">Detalhes das Comissões</h3><ul>';
+                client.comissoes.forEach((comm) => {
+                    detailsHtml += `
+                        <li>
+                            <p><strong>Parcela ${comm.parcela}:</strong> Valor: ${comm.valor || 'N/A'}, Taxa: ${comm.taxa || 'N/A'}</p>
+                            <p>Comissão: ${comm.comissaoPercentual || 'N/A'}, Vencimento: ${comm.vencimento || 'N/A'}</p>
+                            <p>Status: ${comm.statusComissao || 'N/A'}</p> 
+                        </li>
+                    `;
+                });
+                detailsHtml += '</ul>';
+            } else {
+                detailsHtml += '<h3 class="section-title">Detalhes das Comissões</h3><p>Nenhuma informação de comissão encontrada (o parser CSV simples não inclui detalhes de comissões).<br>Se você precisa de comissões, a planilha precisa ter uma coluna JSON para elas, ou considerar outro formato de dados.</p>';
+            }
+
+            modalClientDetails.innerHTML = detailsHtml;
+            clientDetailsModal.style.display = 'block'; 
+        }
+
+        closeModalButton.onclick = function() { 
+            clientDetailsModal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == clientDetailsModal) {
+                clientDetailsModal.style.display = 'none';
+            }
+        }
+
+        function checkBirthdays(clients) {
+            console.log("Verificando aniversariantes...");
+            birthdayStatusElement.style.display = 'block'; 
+            birthdayStatusElement.textContent = 'Verificando aniversariantes do dia...'; 
+
+            const today = new Date();
+            const currentMonth = today.getMonth() + 1; 
+            const currentDay = today.getDate();
+            let birthdayClients = [];
+
+            clients.forEach(client => {
+                if (client.nascimento) {
+                    const parts = client.nascimento.split('/');
+                    if (parts.length >= 2) {
+                        const birthDay = parseInt(parts[0]);
+                        const birthMonth = parseInt(parts[1]);
+
+                        if (birthDay === currentDay && birthMonth === currentMonth) {
+                            birthdayClients.push({
+                                nome: client.nomeCliente || client.segurado, 
+                                telefone: client.foneCelular
+                            });
+                        }
+                    }
+                }
+            });
+
+            if (birthdayClients.length > 0) {
+                let alertMessage = "🎉 Hoje é aniversário de:\n\n";
+                let statusMessage = "🎉 Aniversariantes hoje: ";
+                const namesAndPhones = birthdayClients.map(bc => {
+                    const phone = bc.telefone && bc.telefone !== 'N/A' ? ` (Tel: ${bc.telefone})` : '';
+                    return `${bc.nome}${phone}`;
+                });
+                alertMessage += namesAndPhones.join('\n');
+                statusMessage += namesAndPhones.join(', ') + " 🎉";
+
+                birthdayStatusElement.textContent = statusMessage;
+                alert(alertMessage); 
+            } else {
+                birthdayStatusElement.textContent = 'Nenhum aniversariante encontrado para hoje.';
+            }
+            console.log('Verificação de aniversário concluída. Aniversariantes encontrados:', birthdayClients.length);
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchBar');
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById('clientsTable');
+            const tr = table.getElementsByTagName('tr');
+            let foundAny = false;
+
+            for (let i = 1; i < tr.length; i++) { 
+                const row = tr[i];
+                let rowContainsFilter = false;
+                const tds = row.getElementsByTagName('td');
+                for (let j = 0; j < tds.length; j++) {
+                    const td = tds[j];
+                    if (td.textContent.toLowerCase().includes(filter)) {
+                        rowContainsFilter = true;
+                        break;
+                    }
+                }
+                if (rowContainsFilter) {
+                    row.style.display = '';
+                    foundAny = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+
+            if (foundAny) {
+                noResultsDiv.style.display = 'none';
+            } else {
+                noResultsDiv.style.display = 'block';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("DOM completamente carregado. Iniciando carregamento de dados.");
+            loadingMessage.style.display = 'block'; 
+            searchBar.style.display = 'none';
+            clientsTable.style.display = 'none';
+
+            let dataFromCentralSource = null;
+            try {
+                console.log("Tentando buscar dados de:", GOOGLE_SHEETS_CSV_URL);
+                const response = await fetch(GOOGLE_SHEETS_CSV_URL);
+                if (!response.ok) {
+                    console.error(`Erro na resposta da rede: ${response.status} ${response.statusText}`);
+                    throw new Error(`Erro ao carregar do Google Planilhas: ${response.statusText}`);
+                }
+                const csvText = await response.text();
+                console.log("Dados CSV brutos recebidos (primeiros 100 chars):", csvText.substring(0, 100) + "...");
+                
+                dataFromCentralSource = parseCSVData(csvText); 
+                console.log("Dados carregados e parseados:", dataFromCentralSource);
+            } catch (error) {
+                console.error("ERRO CRÍTICO ao carregar ou parsear dados:", error);
+                alert("Erro ao carregar os dados centralizados dos clientes. Por favor, verifique a URL da planilha, se ela está publicada corretamente para a web como CSV, ou sua conexão com a internet. Detalhes no console do navegador.");
+            } finally {
+                loadingMessage.style.display = 'none'; 
+                console.log("Mensagem de carregamento escondida.");
+            }
+
+            if (dataFromCentralSource && dataFromCentralSource.length > 0) {
+                allClientsData = dataFromCentralSource;
+            } else {
+                allClientsData = []; 
+                console.log("Nenhum dado válido para exibir. allClientsData está vazio.");
+                alert("Nenhum dado de cliente foi encontrado na fonte centralizada. A tabela está vazia ou os dados não puderam ser parseados. Verifique o console para mais detalhes.");
+            }
+
+            populateTable(allClientsData);
+            console.log("Fim do bloco DOMContentLoaded.");
+        });
+
+    </script>
+
+</body>
+</html>
