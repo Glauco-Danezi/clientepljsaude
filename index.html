@@ -1,110 +1,45 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clientes - Leitura Google Planilhas</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-    .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    h1 { text-align: center; color: #007bff; }
-    #searchBar { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-    th { background: #007bff; color: #fff; text-transform: uppercase; }
-    tr:nth-child(even) { background: #f9f9f9; }
-    .no-data { text-align: center; color: #999; padding: 20px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisar CSV com PapaParse</title>
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-<div class="container">
-  <h1>Lista de Clientes</h1>
-  <input type="text" id="searchBar" placeholder="Pesquisar...">
-  <div id="loading">Carregando dados...</div>
-  <div id="noData" class="no-data" style="display:none;">Nenhum cliente encontrado.</div>
-  <table id="clientsTable" style="display:none;">
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Telefone</th>
-        <th>Data de Nascimento</th>
-        <th>Email</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
 
-<script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSgNA6a9P7_cwQO36W8fvAToRL0uClxIMuRIWIcOcGWlhb4croLQw_nzNqpqVxOK_pJ9pn8NIOqOTP_/pub?gid=0&single=true&output=csv';
+    <h1>Dados do CSV do Google Sheets</h1>
+    <pre id="csvData"></pre>
 
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-  return lines.slice(1).map(line => {
-    const values = line.split(',');
-    const client = {};
-    headers.forEach((h, i) => client[h] = values[i] || '');
-    return {
-      nome: client['nome'],
-      fone: client['fone celular'],
-      nascimento: client['nasc'],
-      email: client['email']
-    };
-  });
-}
+    <script>
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSgNA6a9P7_cwQO36W8fvAToRL0uClxIMuRIWIcOcGWlhb4croLQw_nzNqpqVxOK_pJ9pn8NIOqOTP_/pub?gid=0&single=true&output=csv';
+        const outputDiv = document.getElementById('csvData');
 
-  Papa.parse(text, {
-  header: true,
-  skipEmptyLines: true,
-  complete: function(results) {
-    allClients = results.data.map(...);
-    renderTable(allClients);
-  }
-});
-  
-function renderTable(data) {
-  const table = document.getElementById('clientsTable');
-  const tbody = table.querySelector('tbody');
-  tbody.innerHTML = '';
-  if (!data.length) {
-    document.getElementById('noData').style.display = 'block';
-    table.style.display = 'none';
-    return;
-  }
-  data.forEach(c => {
-    const row = document.createElement('tr');
-    row.innerHTML = `<td>${c.nome}</td><td>${c.fone}</td><td>${c.nascimento}</td><td>${c.email}</td>`;
-    tbody.appendChild(row);
-  });
-  document.getElementById('noData').style.display = 'none';
-  table.style.display = 'table';
-}
+        Papa.parse(csvUrl, {
+            download: true, // Isso diz ao PapaParse para baixar o conteúdo da URL
+            header: true,   // Assumindo que a primeira linha do seu CSV são os cabeçalhos
+            complete: function(results) {
+                console.log("Dados Analisados:", results.data);
+                console.log("Erros (se houver):", results.errors);
+                console.log("Meta (informações adicionais):", results.meta);
 
-function filterTable(data) {
-  const term = document.getElementById('searchBar').value.toLowerCase();
-  return data.filter(c => Object.values(c).some(v => v.toLowerCase().includes(term)));
-}
+                if (results.data.length > 0) {
+                    // Exemplo: Mostrar os primeiros 5 registros no <pre>
+                    let displayContent = "Primeiros 5 registros:\n";
+                    for (let i = 0; i < Math.min(results.data.length, 5); i++) {
+                        displayContent += JSON.stringify(results.data[i], null, 2) + "\n";
+                    }
+                    outputDiv.textContent = displayContent;
+                } else {
+                    outputDiv.textContent = "Nenhum dado encontrado ou erro no CSV.";
+                }
+            },
+            error: function(err, file) {
+                console.error("Erro ao analisar CSV:", err, file);
+                outputDiv.textContent = "Erro ao carregar ou analisar o CSV: " + err.message;
+            }
+        });
+    </script>
 
-let allClients = [];
-
-fetch(CSV_URL)
-  .then(res => res.text())
-  .then(text => {
-    allClients = parseCSV(text);
-    renderTable(allClients);
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('searchBar').style.display = 'block';
-  })
-  .catch(err => {
-    console.error(err);
-    document.getElementById('loading').textContent = 'Erro ao carregar dados.';
-  });
-
-document.getElementById('searchBar').addEventListener('input', () => {
-  renderTable(filterTable(allClients));
-});
-</script>
 </body>
 </html>
