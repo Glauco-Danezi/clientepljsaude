@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta de Clientes</title>
+    <title>Informações dos Clientes</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
             background-color: #f4f4f4;
             color: #333;
         }
@@ -16,894 +16,519 @@
             text-align: center;
             margin-bottom: 30px;
         }
-        .search-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
-        input[type="text"] { 
-            padding: 10px; 
-            margin-right: 10px; 
-            width: 300px; 
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        #searchBar {
+            width: 100%;
+            padding: 12px 20px;
+            margin-bottom: 25px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
             font-size: 16px;
+            transition: border-color 0.3s ease;
         }
-        button { 
-            padding: 10px 20px; 
-            cursor: pointer; 
+        #searchBar:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: left;
+            word-wrap: break-word;
+        }
+        th {
             background-color: #007bff;
             color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #result { 
-            margin-top: 20px; 
-            background-color: white;
-            border: 1px solid #e0e0e0; 
-            padding: 20px; 
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .client-info {
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px dashed #eee;
-        }
-        .client-info:last-child {
-            border-bottom: none;
-        }
-        .client-info p { 
-            margin: 8px 0; 
-            line-height: 1.5;
-        }
-        .client-info strong {
-            color: #555;
-        }
-        .client-info h3 {
-            color: #0056b3;
-            margin-top: 15px;
-            margin-bottom: 10px;
-        }
-        .client-info ul {
-            list-style-type: disc;
-            margin-left: 20px;
-            padding: 0;
-        }
-        .client-info li {
-            margin-bottom: 5px;
-        }
-        .error { 
-            color: red; 
-            text-align: center;
             font-weight: bold;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tbody tr:hover {
+            cursor: default;
+        }
+        tbody tr td:first-child:hover {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #007bff;
+        }
+        .no-data {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+        #loadingMessage {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #555;
+            display: none;
+        }
+
+        /* Modal Styles (for client details - read-only now) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-content h2 {
+            color: #007bff;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .modal-content p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .modal-content strong {
+            color: #333;
+        }
+        .modal-content .section-title {
+            color: #0056b3;
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .modal-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .modal-content ul li {
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .modal-content ul li p {
+            margin: 0;
         }
     </style>
 </head>
 <body>
-    <h1>Consulta de Clientes</h1>
-    <div class="search-container">
-        <input type="text" id="searchInput" placeholder="Digite o documento ou parte do nome">
-        <button onclick="searchClient()">Buscar Cliente</button>
+
+    <div class="container">
+        <h1>Informações dos Clientes</h1>
+
+        <p style="text-align: center; margin-bottom: 25px; font-style: italic; color: #555;">
+            Os dados dos clientes são carregados de uma fonte centralizada (Google Planilhas) e são apenas para leitura.
+        </p>
+
+        <input type="text" id="searchBar" onkeyup="filterTable()" placeholder="Pesquisar por qualquer informação..." style="display: none;">
+        <p id="birthdayStatus" style="text-align: center; margin-top: 15px; margin-bottom: 25px; font-style: italic; color: #555; display: none;"></p>
+
+        <table id="clientsTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>Data de Nascimento</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+        <div id="noResults" class="no-data" style="display: none;">Nenhum cliente encontrado com o termo de busca.</div>
+        <div id="loadingMessage" style="display: block;">Carregando dados dos clientes...</div>
+        
     </div>
 
-    <div id="result">
-        <p>Resultados da busca aparecerão aqui.</p>
+    <div id="clientDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modalClientName"></h2>
+            <div id="modalClientDetails">
+                </div>
+        </div>
     </div>
 
     <script>
-        // Define o texto bruto da sua "planilha" diretamente no código JavaScript
-        // ATENÇÃO: Se os dados mudarem, você precisará atualizar este texto AQUI
-        // e salvar o arquivo index.html novamente no GitHub Pages.
-        const RAW_CLIENT_DATA_TEXT = `
-Segurado: ALINE CARLA DA SILVA GONCALVES
-Documento: 90938542168
-Email: ALINE.CARLA@GMAIL.COM
-Fone celular: 61991472610
-CEP	Endereço	Bairro	Cidade	UF
-70675102	QRSW 1 Bloco A-2, 204	Setor Sudoeste	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ALINE CARLA DA SILVA GONCALVES	MARINA CONCEICAO SILVA GONCALVES	90938542168	Titular	27/06/84	TOP Nacional
-
-Segurado: KARINA ALEXANDRE AUGUSTO BATISTA
-Documento: 69925429153
-Email: KARINAAUUGUSTO@GMAIL.COM
-Fone celular: 61994053310
-CEP	Endereço	Bairro	Cidade	UF
-72876229	Quadra 29, 14	Valparaiso I - Etapa C	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-KARINA ALEXANDRE AUGUSTO BATISTA	MATILDE ALEXANDRA AUGUSTO	69925429153	Titular	15/12/79	P Gold Plus
-
-Segurado: ANA FLAVIA ALVES NERY
-Documento: 04328806157
-Email: ANAFLAVIAALVES29@GMAIL.COM
-Fone celular: 61981630847
-CEP	Endereço	Bairro	Cidade	UF
-72872724	Conjunto Residencial 7 Condomínio 2 Bloco I, 803	Parque das Cachoeiras	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ANA FLAVIA ALVES NERY	SANDRA ALVES CIRINO	04328806157	Titular	10/11/92	Dental E80 Orto PF
-
-Segurado: GUILHERME MARIANO DE AMORIM SILVA
-Documento: 05167596122
-Email: GUIMARIANO900@GMAIL.COM
-Fone celular: 61996752288
-CEP	Endereço	Bairro	Cidade	UF
-70344100	SQS 105 Bloco J, 202	Asa Sul	BRASILIA	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-GUILHERME MARIANO DE AMORIM SILVA	ANNAMARIA GALVAO DE AMORIM SILVA	05167596122	Titular	28/01/99	Q Estilo Nacional ADS
-
-Segurado: CAMILA OLIVEIRA MAYERHOFER SANTOS
-Documento: 05571357100
-Email: CAMILA.OMS@HOTMAIL.COM
-Fone celular: 61 981197052
-CEP	Endereço	Bairro	Cidade	UF
-71930500	Rua 34, 1201	Sul (Águas Claras)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-CAMILA OLIVEIRA MAYERHOFER SANTOS	CECILIA MARIA OLIVEIRA MAYERHOFER SANTOS	05571357100	Titular	30/08/96	S Unimoc	
-
-
-Código empresa: 8U314
-Segurado: ALEXANDRE HIDEYUKI POSSATO
-Documento: 27951890000173
-Email: ALEXPOSSATO@HOTMAIL.COM
-Fone celular: 61997919501
-CEP	Endereço	Bairro	Cidade	UF
-71675220	SHIS QI 29 Conjunto 2, SN LT 05	Setor de Habitações Individuais Sul	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ALEXANDRE HIDEYUKI POSSATO	TAKAKO GUENKA POSSATO	09143497837	Titular	25/06/67	Direto BSB	Implantado
-LUCIANA SEQUEIRA DE CERQUEIRA	MARIA EUNICE DE OLIVEIRA CERQUEIRA	16310077856	Cônjuge	17/02/73	Direto BSB	Implantado
-
-Segurado: MARIA CLEUSA GOMES
-Documento: 26737268000102
-Email: mcleusa2004@gmail.com
-Fone celular: 99840-3535
-CEP	Endereço	Bairro	Cidade	UF
-72879320	Quadra 4 Chácara 67, 37	Ypiranga	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-MARIA CLEUSA GOMES	MARIA RIBEIRO DOS SANTOS	49324110144	Titular	15/03/68	Dental 205	
-HUDSON RAPHAEL GOMES DA SILVA	NC	01381101151	Cônjuge	21/04/88	Dental 205	
-FRANCIELE BORBA RAPHAEL	NC	11204724660	Agregado	05/07/89	Dental 205	
-SOPHIA RAPHAEL DA SILVA	NC	07790046128	Agregado	07/11/10	Dental 205
-
-Segurado: LETICIA AUGUSTO DOS SANTOS
-Documento: 70670984167
-Email: LETICIA.AGUSTO.322@GMAIL.COM
-Fone celular: 61993709683
-CEP	Endereço	Bairro	Cidade	UF
-72876229	Quadra 29, 14	Valparaiso I - Etapa C	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-LETICIA AUGUSTO DOS SANTOS	KARINA ALEXANDRE AUGUSTO	70670984167	Titular	08/12/03	S Unimoc	
-
-
-Código empresa: 8UPFH
-Segurado: EDUARDO DA SILVA CASTRO 03125302188
-Documento: 45381580000142
-Email: EDU.SILVACASTRO@GMAIL.COM
-Fone celular: 61992169068
-CEP	Endereço	Bairro	Cidade	UF
-71916250	Rua 22, 06 APT 901	Norte (Águas Claras)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-EDUARDO DA SILVA CASTRO	MARIA LENILCE DA SILVA CASTRO	03125302188	Titular	07/03/90	Direto BSB	Implantado
-MAINA RIBEIRO PEREIRA CASTRO	NIZELMA MARIA RIBEIRO PEREIRA	02149100169	Cônjuge	19/12/88	Direto BSB	Implantado
-CLARICE PEREIRA CASTRO	MAINA RIBEIRO PEREIRA CASTRO	11152743171	Filho(a)/Enteado(a)	30/04/21	Direto BSB	Implantado
-
-Segurado: ALANIS DUARTE MONTEIRO
-Documento: 06389453132
-Email: alanisdmonteiro@hotmail.com
-Fone celular: 998287797
-CEP	Endereço	Bairro	Cidade	UF
-71881778	QN 22 Conjunto 3, 201	Riacho Fundo II	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ALANIS DUARTE MONTEIRO	DARINE DUARTE SILVA	06389453132	Titular	04/04/99	Dental E80 Orto PF
-
-Segurado: MARIA DAS DORES SILVA OLIVEIRA
-Documento: 57308675149
-Email: cristinakaka030@gmail.com
-Fone celular: 982630175
-CEP	Endereço	Bairro	Cidade	UF
-72210250	QNM 24 Conjunto J, 37	Ceilândia Norte (Ceilândia)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-MARIA DAS DORES SILVA OLIVEIRA	ANTONIA DA SILVA OLIVEIRA	57308675149	Titular	19/12/73	Dental 205
-
-Segurado: CLAUDIO SOUSA FERREIRA
-Documento: 08334491760
-Email: CLAUDIOMELKI@HOTMAIL.COM
-Fone celular: 61964324915
-CEP	Endereço	Bairro	Cidade	UF
-71100061	EPTG QE 2 Bloco A-11, 106	Quadras Econômicas Lúcio Costa (Guará)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-CLAUDIO SOUSA FERREIRA	FLORINDA ARMINDA SOUSA FERREIRA	08334491760	Titular	27/02/80	TEC Clássico Regional Brasília ADS	
-
-Segurado: LEON RAVI SOARES DAMACENO
-Documento: 11317449185
-Email: diemidamaceno@gmail.com
-Fone celular: 61 995794883
-CEP	Endereço	Bairro	Cidade	UF
-72427010	Ponte Alta Norte, 01	Ponte Alta Norte (Gama)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-LEON RAVI SOARES DAMACENO	DIEMI DAMACENO DE OLIVEIRA	11317449185	Titular	21/09/21	S Premium Promo DF - AD
-
-Segurado: EMILY BEATRIZ JESUS DANEZI
-Documento: 05394122105
-Email: pljsaude@gmail.com
-Fone celular: 993707140
-CEP	Endereço	Bairro	Cidade	UF
-72876341	Quadra 41-45, 0	Parque Esplanada III	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-EMILY BEATRIZ JESUS DANEZI	PATRICIA LUCYENE JESUS DANEZI	05394122105	Titular	13/05/09	Dental E80 Orto PF
-
-Segurado: ANIELLY BORGES DE OLIVEIRA
-Documento: 09453875120
-Email: kenia.juris@hotmail.com
-Fone celular: 61995943538
-CEP	Endereço	Bairro	Cidade	UF
-71919180	Rua 36, 303	Norte (Águas Claras)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ANIELLY BORGES DE OLIVEIRA	ELLEN STEFANIA BORGES SANTOS	09453875120	Titular	02/07/11	Dental 205
-
-Segurado: REGIANE MOREIRA DOS SANTOS
-Documento: 059.698.571-14
-Email: m_regiane@ymail.com
-Fone celular: 61986252163
-CEP	Endereço	Bairro	Cidade	UF
-72593114	QRC 14, 29	Residencial Santos Dumont (Santa Maria)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-REGIANE MOREIRA DOS SANTOS	MARIA NETA MOREIRA DOS SANTOS	05969857114	Titular	07/01/97	Dental 205
-
-Segurado: REGIANE MOREIRA DOS SANTOS
-Documento: 05969857114
-Email: m_regiane@ymail.com
-Fone celular: 61986252163
-CEP	Endereço	Bairro	Cidade	UF
-72593114	QRC 14, 29 RESIDENCIAL SANTOS DUMONT	Residencial Santos Dumont (Santa Maria)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-REGIANE MOREIRA DOS SANTOS	MARIA NETA MOREIRA DOS SANTOS	05969857114	Titular	07/01/97	P Master Gold
-
-Segurado: CARMOSINA BATISTA DE ALBUQUERQUE
-Documento: 14343010104
-Email: neutaastros@gmail.com
-Fone celular: 996831303
-CEP	Endereço	Bairro	Cidade	UF
-72145619	QNM 36 Conjunto S, 43	Taguatinga Norte (Taguatinga)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-CARMOSINA BATISTA DE ALBUQUERQUE	RUBINA BATISTA DE ALBUQUERQUE	14343010104	Titular	12/07/55	Dental E60 Prótese Clinica
-
-Segurado: JOAO VICTOR ALBUQUERQUE DE OLIVEIRA BANDEIRA
-Documento: 05385917141
-Email: faet.wow@gmail.com
-Fone celular: 998731247
-CEP	Endereço	Bairro	Cidade	UF
-72316003	QR 206 Conjunto 3, 01	Samambaia Norte (Samambaia)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-JOAO VICTOR ALBUQUERQUE DE OLIVEIRA BANDEIRA	NUBIA ALBUQUERQUE	05385917141	Titular	04/12/99	Dental 205
-
-Segurado: TAINA MARTINS DADA
-Documento: 70682124176
-Email: martinstaiog@gmail.com
-Fone celular: 61985252611
-CEP	Endereço	Bairro	Cidade	UF
-72876154	Quadra 47, 29	Valparaiso I - Etapa B	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-TAINA MARTINS DADA	SANDRA APARECIDA MARTINS DADA	70682124176	Titular	17/01/97	Dental 205	
-
-
-Segurado: KENIA JESSYLENE SILVA DE JESUS
-Documento: 71503013120
-Email: kenitusinha@gmail.com
-Fone celular: 61981212825
-CEP	Endereço	Bairro	Cidade	UF
-71919180	Rua 36, 303	Norte (Águas Claras)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-KENIA JESSYLENE SILVA DE JESUS	MARIA APARECIDA SILVA DE JESUS	71503013120	Titular	16/12/80	Dental 205
-
-Segurado: JONATAS MENDES DE ALMEIDA SANTOS
-Documento: 02991238127
-Email: jonatas.santos.ex@gmail.com
-Fone celular: 6198484-4086
-CEP	Endereço	Bairro	Cidade	UF
-73015404	Quadra 2 Conjunto D-4, 28	Sobradinho	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-JONATAS MENDES DE ALMEIDA SANTOS	DIOMAR MENDES DE ALMEIDA SANTOS	02991238127	Titular	09/06/90	P Master Gold	
-
-Segurado: ERIC FERREIRA DE JESUS
-Documento: 13387039786
-Email: eric.ferreira2311@gmail.com
-Fone celular: 21982244759
-CEP	Endereço	Bairro	Cidade	UF
-25030250	Rua Himalaia, 75	Vila Centenário	Duque de Caxias	RJ
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ERIC FERREIRA DE JESUS	ERILDA FERREIRA DE JESUS	13387039786	Titular	23/06/00	Dental E80 Orto PF
-
-Segurado: JOAO VITOR CAMPOS MENDES
-Documento: 05335775190
-Email: MILTONEKA@GMAIL.COM
-Fone celular: 61991249400
-CEP	Endereço	Bairro	Cidade	UF
-72876158	Quadra 49, 30	Valparaiso I - Etapa B	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-JOAO VITOR CAMPOS MENDES	KAREN LUCY CAMPOS SERGIO	05335775190	Titular	04/11/09	GC Ideal Cuidado 10
-
-Código empresa: 1034890
-Segurado: NIZELMA MARIA RIBEIRO PEREIRA
-Documento: 11005009449
-Email: nizelmarp@gmail.com
-Fone celular: 61999759412
-CEP	Endereço	Bairro	Cidade	UF
-70660043	AOS 4 Bloco C, 112	Área Octogonal	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-NIZELMA MARIA RIBEIRO PEREIRA	MARIA DO CARMO RIBEIRO	11005009449	Titular	09/04/53	Medsênior Black 3	Implantado
-
-Código empresa: 1034886
-Segurado: ANISIO DOS REIS PEREIRA
-Documento: 11569050104
-Email: anisiobsb@hotmail.com
-Fone celular: 61999844328
-CEP	Endereço	Bairro	Cidade	UF
-70660043	AOS 4 Bloco C, 112	Área Octogonal	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ANISIO DOS REIS PEREIRA	SALVINA CALDEIRA PEREIRA	11569050104	Titular	25/04/56	Medsênior Black 3	Implantado
-
-
-Segurado: SAMUEL MENDES DE ALMEIDA SANTOS
-Documento: 04876581169
-Email: SAMUEL_BOSAIS@HOTMAIL.COM
-Fone celular: (61) 98103-4765
-CEP	Endereço	Bairro	Cidade	UF
-73015404	Quadra 2 Conjunto D-4, 04	Sobradinho	Brasilia	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-SAMUEL MENDES DE ALMEIDA SANTOS	DIOMAR MENDES DE ALMEIDA SANTOS	04876581169	Titular	10/05/93	P Master Gold
-
-Segurado: VALENTINA DE SOUZA MARANHAO COSTA
-Documento: 08926407152
-Email: HELIMSAMU192@GMAIL.COM
-Fone celular: (61) 99162-3520
-CEP	Endereço	Bairro	Cidade	UF
-72806180	Avenida Piancó, 10 Residencial Ecoville	Parque Estrela Dalva V	Luziânia	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-VALENTINA DE SOUZA MARANHAO COSTA	MARIANA SOUZA MARANHAO COSTA	08926407152	Titular	02/01/18	P Master Gold
-
-Segurado: PAULO EDUARDO DE OLIVEIRA XAVIER
-Documento: 55787886100
-Email: pexavier@hotmail.com
-Fone celular: 61992010315
-CEP	Endereço	Bairro	Cidade	UF
-72876341	Quadra 41-45, 01	Parque Esplanada III	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-PAULO EDUARDO DE OLIVEIRA XAVIER	NILZA OLIVEIRA XAVIER	55787886100	Titular	10/07/71	Medsênior Essencial
-
-Código empresa: 192926
-Segurado: CAPITAL CONTABILIDADE E ASSESSORIA LTDA
-Documento: 14677043000110
-Email: MARCIOPAULAM1@GMAIL.COM
-Fone celular: (61) 99187-3334
-CEP	Endereço	Bairro	Cidade	UF
-72110040	QNA 4, 309 LT 33	Taguatinga Norte (Taguatinga)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-MARCIO ANTONIO DE PAULA SILVA	MARIA APARECIDA DE PAULA SILVA	30823579115	Titular	15/08/71	Bem Brasília	Implantado
-NATALY SAMPAIO DE SOUZA	EURENICE SAMPAIO PESSOA SOUZA	69631816168	Cônjuge	21/12/81	Bem Brasília	Implantado
-
-
-Segurado: EDUARDO DE SOUZA XAVIER
-Documento: 10677071159
-Email: PEXAVIER@GMAIL.COM
-Fone celular: (61) 99201-0315
-CEP	Endereço	Bairro	Cidade	UF
-72876341	Quadra 41-45, 01 BL M	Parque Esplanada III	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-EDUARDO DE SOUZA XAVIER	NATALY SAMPAIO DE SOUZA	10677071159	Titular	27/05/12	P Master Gold	
-
-Código empresa: 8WQ5U
-Segurado: MATHEUS AUTOPECAS LTDA
-Documento: 29047192000173
-Email: matheusautopecaseirelime@hotmail.com
-Fone celular: 61995802828
-CEP	Endereço	Bairro	Cidade	UF
-72870064	Rua 6 (Quadras 04,05,07,08,10,11), SN	Parque Rio Branco	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-SEBASTIANA SAMPAIO MATOS	NAO INFORMADO	43828345387	Titular	20/01/73	Direto BSB	Implantado
-IVAMAR CANDIDO MATOS	NAO INFORMADO	49480340100	Cônjuge	14/11/69	Direto BSB	Implantado
-ERIC SAMPAIO MATOS	SEBASTIANA SAMPAIO MATOS	71078008175	Filho(a)/Enteado(a)	08/09/05	Direto BSB	Implantado
-LUCAS SAMPAIO MATOS	SEBASTIANA SAMPAIO MATOS	04921464111	Filho(a)/Enteado(a)	19/01/95	Direto BSB	Implantado
-MATHEUS SAMPAIO MATOS	SEBASTIANA SAMPAIO MATOS	04921463140	Filho(a)/Enteado(a)	18/09/96	Direto BSB	Implantado
-
-Segurado: ARTUR ANTUNES BARRETO ROCHA
-Documento: 86124653540
-Email: ARTURDTO@GMAIL.COM
-Fone celular: (61) 99850-5449
-CEP	Endereço	Bairro	Cidade	UF
-72876341	Quadra 41-45, 05	Parque Esplanada III	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ARTUR ANTUNES BARRETO ROCHA	MARIJARIA BARRETO DOS SANTOS ROCHA	86124653540	Titular	18/08/00	E Bronze
-
-Segurado: MARIA DA CONCEICAO BRAGA DA COSTA
-Documento: 68731612849
-Email: MC13BC@HOTMAIL.COM
-Fone celular: (61) 99411-0473
-CEP	Endereço	Bairro	Cidade	UF
-71919918	RUA 36 NORTE LOTE 05, 704	AGUAS CLARAS	TAGUATINGA	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-MARIA DA CONCEICAO BRAGA DA COSTA	SOFIA BARROSO BRAGA DA COSTA	68731612849	Titular	13/11/49	Medsênior Essencial
-
-Código empresa: 8WVHB
-Segurado: DIGIORG SERVICOS DE DIGITACAO E ORGANIZACAO DE DOCUMENTOS LTDA
-Documento: 08335868000154
-Email: mceicapoliveira@hotmail.com
-Fone celular: 61999693222
-CEP	Endereço	Bairro	Cidade	UF
-70719900	SRTV/NORTE QUADRA 702, 2007	ASA NORTE	BRASÍLIA	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ABDIAS EUSTAQUIO PEREIRA	NAO INFORMADO	05760046187	Titular	21/04/49	Direto BSB	Implantado
-DEOLINDA DE FATIMA LANDIM PEREIRA	NAO INFORMADO	24416932120	Cônjuge	11/08/51	Direto BSB	Implantado
-PATRICIA LANDIM PEREIRA	NAO INFORMADO	01013116135	Filho(a)/Enteado(a)	29/12/83	Direto BSB	Implantado
-
-
-Código empresa: 426017
-Segurado: DIGIORG SERVICOS DE DIGITACAO E ORGANIZACAO DE DOCUMENTOS LTDA
-Documento: 08335868000154
-Email: mceicapoliveira@hotmail.com
-Fone celular: 61999693222
-CEP	Endereço	Bairro	Cidade	UF
-70719900	SRTV/NORTE QUADRA 702, 2007	ASA NORTE	BRASÍLIA	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ABDIAS EUSTAQUIO PEREIRA	NAO INFORMADO	05760046187	Titular	21/04/49	Mais	Implantado
-DEOLINDA DE FATIMA LANDIM PEREIRA	NAO INFORMADO	24416932120	Cônjuge	11/08/51	Mais	Implantado
-PATRICIA LANDIM PEREIRA	NAO INFORMADO	01013116135	Filho(a)/Enteado(a)	29/12/83	Mais	Implantado
-
-Segurado: KARINA ALEXANDRE AUGUSTO BATISTA
-Documento: 69925429153
-Email: KARINAAUUGUSTO@GMAIL.COM
-CEP	Endereço	Bairro	Cidade	UF
-72876229	Quadra 29, 14	Valparaiso I - Etapa C	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-KARINA ALEXANDRE AUGUSTO BATISTA	MATILDE ALEXANDRE AUGUSTO	69925429153	Titular	15/12/79	EP Ideal Cuidado 10	
-
-
-Código empresa: 8WVWW
-Segurado: ANNA CLARA NERY JUNQUILHO 03589087102
-Documento: 44208095000109
-Email: ANNACLARANERYJUNQUILHO@GMAIL.COM
-Fone celular: (61) 99999-0828
-CEP	Endereço	Bairro	Cidade	UF
-71741706	SMPW Quadra 17 Conjunto 6, 06 LT 11	Park Way	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ANNA CLARA NERY JUNQUILHO	NELLY ROSA NERY JUNQUILHO	03589087102	Titular	30/08/90	Direto BSB	Implantado
-ANNA SOPHIA NERY JUNQUILHO MARRA	ANNA CLARA NERY JUNQUILHO		Filho(a)/Enteado(a)	11/12/10	Direto BSB	Implantado
-
-
-Segurado: SEBASTIANA SOUZA SANTOS
-Documento: 02336848597
-Email: TIANA.SSANTOS33@GMAIL.COM
-Fone celular: (61) 98550-2057
-CEP	Endereço	Bairro	Cidade	UF
-72878321	Quadra QC 05 Bloco 1, 403	Cidade Jardins	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-SEBASTIANA SOUZA SANTOS	ODILIA SOUSA SANTOS	02336848597	Titular	20/01/84	S Univida Bref	
-LIVIA SANTOS SILVA	SEBASTIANA SOUZA SANTOS	11594919178	Filho(a)/Enteado(a)	16/05/22	S Univida Bref
-
-Segurado: LEVI DE JESUS DA SILVA
-Documento: 69704082720
-Email: levidejesus13@gmail.com
-Fone celular: 21 975537581
-CEP	Endereço	Bairro	Cidade	UF
-25030250	Rua Himalaia, 75	Vila Centenário	Duque de Caxias	RJ
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-LEVI DE JESUS DA SILVA	BEATRIZ DO CARMO DE JESUS	69704082720	Titular	13/06/60	Dental E60 Prótese Clinica
-
-Segurado: PATRICIA LUCYENE JESUS DANEZI
-Documento: 80395414172
-Email: PLJSAUDE@GMAIL.COM
-Fone celular: (61) 99155-5559
-CEP	Endereço	Bairro	Cidade	UF
-71876341	QD 41-45, 02	PARQUE ESPLANADA III	BRASILIA	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-PATRICIA LUCYENE JESUS DANEZI	MARIA APARECIDEA SILVA DE JESUS	80395414172	Titular	19/08/78	Dental E90 Prótese Estética	
-
-
-Segurado: CATILCIA DE OLIVEIRA HUSNAIN
-Documento: 64417638187
-Email: CATILCIAHUSNAIN@GMAIL.COM
-Fone celular: (61) 99646-6402
-CEP	Endereço	Bairro	Cidade	UF
-72878006	Rua 20, APT 206 BL G PARK BELLE LUNA	Parque Esplanada II	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-CATILCIA DE OLIVEIRA HUSNAIN	MARIA ANTONIETA DIAS	64417638187	Titular	18/08/76	Medsênior Essencial
-
-Segurado: MARIA MODESTO DE ALBUQUERQUE
-Documento: 18485030168
-Email: maemariamodesto@gmail.com
-Fone celular: (61)984259897
-CEP	Endereço	Bairro	Cidade	UF
-72503608	QR 303 Conjunto H, 0 42	Santa Maria	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-MARIA MODESTO DE ALBUQUERQUE	RICARDA RODRIGUES DE ALBUQUERQUE	18485030168	Titular	25/03/60	Medsênior Essencial
-
-Segurado: THIAGO OLINTO OLIVATO
-Documento: 71620427168
-Email: thiago.olivato1@gmail.com
-CEP	Endereço	Bairro	Cidade	UF
-73091900	Rodovia BR-020, 0 01	Setor Habitacional Contagem (Sobradinho)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-THIAGO OLINTO OLIVATO	CREUSA MONTEIRO OLINTO OLIVATO	71620427168	Titular	19/06/81	Dental 205	
-
-
-Segurado: CREUSA MONTEIRO OLINTO OLIVATO
-Documento: 13590146168
-Email: creusaolivato@gmail.com
-Fone celular: 999880522
-CEP	Endereço	Bairro	Cidade	UF
-73091900	Rodovia BR-020, 0 01	Setor Habitacional Contagem (Sobradinho)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-CREUSA MONTEIRO OLINTO OLIVATO	LINA MONTEIRO OLINTO	13590146168	Titular	29/04/55	Dental 205
-
-Segurado: JOAO LUCAS AMGNER LOURENCO
-Documento: 03439956113
-Email: MRJOHNBIO@GMAIL.COM
-Fone residencial: (61) 99645-8703
-Fone celular: (61) 99983-1921
-CEP	Endereço	Bairro	Cidade	UF
-04021051	Rua Sena Madureira, APT 72	Vila Clementino	São Paulo	SP
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-JOAO LUCAS AMGNER LOURENCO	RITA DE CASSIA LOURENCO	03439956113	Titular	01/09/90	Exato
-
-Segurado: LUCIANA COSTA MORAES
-Documento: 01453546103
-Email: MORAESLUCIANA84@GMAIL.COM
-Fone celular: 61 996230377
-CEP	Endereço	Bairro	Cidade	UF
-71710555	Segunda Avenida Blocos 1315A/1425B, 104	Núcleo Bandeirante	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-LUCIANA COSTA MORAES	MARIA DO SOCORRO COSTA MORAES	01453546103	Titular	30/11/84	GC Unity Vida
-
-Segurado: JULIA CICCI SILVA
-Documento: 71072494108
-Email: CICCIJUJU97@GMAIL.COM
-Fone celular: (61)984896168
-CEP	Endereço	Bairro	Cidade	UF
-72876223	Quadra 23, 34	Valparaiso I - Etapa C	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-JULIA CICCI SILVA	CRISTIANE FERREIRA CICCI	71072494108	Titular	29/11/02	Dental 205	
-
-
-Segurado: ELIANE BRITO DE CARVALHO
-Documento: 84653710163
-Email: ALIANEBRITOD@GMAIL.COM
-Fone celular: (61) 99270-5350
-CEP	Endereço	Bairro	Cidade	UF
-71939360	Quadra 203, 04	Sul (Águas Claras)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ELIANE BRITO DE CARVALHO	JULIA BRITO DE CARVALHO	84653710163	Titular	19/09/78	P Master Life	
-LUAN BRITO DE CARVALHO ALVES	ELIANE BRITO DE CARVALHO	07611766163	Filho(a)/Enteado(a)	09/08/11	P Master Life
-
-Segurado: PAULA LUCIA DE MENDONCA MATOS
-Documento: 02322691143
-Email: PAULALUCIA22@GMAIL.COM
-Fone celular: (61) 99580-8798
-CEP	Endereço	Bairro	Cidade	UF
-72115030	Quadra QNB 3, 23	Taguatinga Norte (Taguatinga)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-PAULA LUCIA DE MENDONCA MATOS	MARIA LUCIA RODRIGUES DE MENDONCA	02322691143	Titular	22/02/88	Gold Dental
-
-Segurado: PAULA LUCIA DE MENDONCA MATOS
-Documento: 02322691143
-Email: PAULALUCIA22@GMAIL.COM
-Fone celular: (61) 99580-8798
-CEP	Endereço	Bairro	Cidade	UF
-72115030	Quadra QNB 3, 23	Taguatinga Norte (Taguatinga)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-PAULA LUCIA DE MENDONCA MATOS	MARIA LUCIA RODRIGUES DE MENDONCA	02322691143	Titular	22/02/88	P Master Life
-
-Segurado: 50 885 119 PAULO VITOR MEDEIROS DE OLIVEIRA
-Documento: 50885119000167
-Email: PAULOVMOLIVEIRA.BSB@GMAIL.COM
-Fone celular: (61) 98496-8038
-CEP	Endereço	Bairro	Cidade	UF
-73062413	Conjunto AR 14 Conjunto 13, 02	Setor Oeste (Sobradinho II)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-PAULO VITOR MEDEIROS DE OLIVEIRA	DAINE SILVA MEDEIROS DE OLIVEIRA	05181750141	Titular	16/03/01	Dental 205	
-ELLEN BRUNA OLIVEIRA SILVA	NAO CONSTA	07666402139	Outros	31/03/00	Dental 205	
-DAIANE SILVA MEDEIROS DE OLIVEIRA	NAO CONSTA	85219843168	Outros	30/10/80	Dental 205	
-ALESSANDRO DE OLIVEIRA	NAO CONSTA	82854394100	Outros	31/10/78	Dental 205	
-ANDRE VITOR MEDEIROS DE OLIVEIRA	NAO CONSTA	05181751113	Outros	05/11/03	Dental 205	
-REBECKA CRISTINE FONSECA DE LIMA	NAO CONSTA	07754526107	Outros	13/04/03	Dental 205
-
-
-Segurado: SEBASTIANA SOUZA SANTOS
-Documento: 02336848597
-Email: TIANA.SSANTOS33@GMAIL.COM
-Fone celular: (61) 98550-2057
-CEP	Endereço	Bairro	Cidade	UF
-72878321	Quadra QC 05 Bloco 1, 403	Cidade Jardins	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-SEBASTIANA SOUZA SANTOS	SN	02336848597	Titular	20/01/84	P Master Life	
-LIVIA SANTOS SILVA	SN	11594919178	Filho(a)/Enteado(a)	16/05/22	S Univida Bref
-
-Segurado: ANA MARIA DE OLIVEIRA MAIA
-Documento: 72047917468
-Email: ANAGERMANO_@HOTMAIL.COM
-Fone celular: (61)993796332
-CEP	Endereço	Bairro	Cidade	UF
-71928720	Avenida Sibipiruna, 2207	Sul (Águas Claras)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ANA MARIA DE OLIVEIRA MAIA	SN	72047917468	Titular	20/07/68	Medsênior DF
-
-Segurado: ALEX SANTOS DE OLIVEIRA
-Documento: 03783717116
-Email: ALEXSANTOSDEOLIVEIRAALEX@GMAIL.COM
-Fone celular: (61)8245-9563
-CEP	Endereço	Bairro	Cidade	UF
-71825300	Avenida Sucupira, 61	Riacho Fundo I	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ALEX SANTOS DE OLIVEIRA	SN	03783717116	Titular	21/04/88	Dental 205	
-
-
-Segurado: LUIZ ANTONIO ROCHA
-Documento: 85312231800
-Email: LUIZ.A.ROCHA@GMAIL.COM
-Fone celular: (61) 98140-0190
-CEP	Endereço	Bairro	Cidade	UF
-72876027	Quadra 9, 08	Valparaiso I - Etapa A	Valparaíso de Goiás	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-LUIZ ANTONIO ROCHA	ANGELICA QUINTANILHA ROCHA	85312231800	Titular	05/06/56	Medsênior Essencial	
-
-
-Segurado: GABRIEL ALBUQUERQUE DE OLIVEIRA BANDEIRA
-Documento: 05385915106
-Email: NUBA.BANDEIRA.A@HOTMAIL.COM
-Fone celular: (61)981346113
-CEP	Endereço	Bairro	Cidade	UF
-72316002	Quadra QR 206 Conjunto 2, 101	Samambaia Norte (Samambaia)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-GABRIEL ALBUQUERQUE DE OLIVEIRA BANDEIRA	NUBIA ALBUQUERQUE BANDEIRA	05385915106	Titular	28/02/08	S Unity Vida
-
-
-Segurado: RR BAR LTDA - BAR DA GALEGA
-Documento: 41601276000102
-Email: ROSA.SANTO.SOUSAX100Z200@GMAIL.COM
-Fone celular: (61) 99687-7068
-CEP	Endereço	Bairro	Cidade	UF
-72900326	Quadra 70, 10	Centro	Santo Antônio do Descoberto	GO
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-ROSA MANOEL DOS SANTOS	GERONIMA CANDIDA DOS SANTOS	94349363149	Titular	09/04/81	Master Life	
-RAISSA DOS SANTOS SOUSA	ROSA MANOEL DOS SANTOS SOUSA	07066695178	Filho(a)/Enteado(a)	02/09/05	Master Life	
-RAQUEL DOS SANTOS SOUSA	ROSA MANOEL DOS SANTOS SOUSA	07066691180	Filho(a)/Enteado(a)	13/12/99	Master Life	
-
-
-Segurado: WELBYS ALBUQUERQUE DA SILVA
-Documento: 85001031168
-Email: WELBYS_ALBUQUERQUE@HOTMAIL.COM
-Fone celular: (61) 98118-3089
-CEP	Endereço	Bairro	Cidade	UF
-72145619	Quadra QNM 36 Conjunto S, 43	Taguatinga Norte (Taguatinga)	Brasília	DF
-Nome	Mãe	CPF	Tipo	Nasc	Plano	Carteirinha
-WELBYS ALBUQUERQUE DA SILVA	CARMOSINA ALBUQUERQUE DA SILVA	85001031168	Titular	05/08/77	Medsênior DF
-        `;
-
-        let clientsData = [];
-
-        // Função para carregar e parsear os dados
-        async function fetchAndParseData() {
-            // Os dados agora são lidos diretamente da constante RAW_CLIENT_DATA_TEXT
-            clientsData = parseCustomTextData(RAW_CLIENT_DATA_TEXT);
-            console.log("Dados carregados e processados:", clientsData);
+        const clientsTableBody = document.querySelector('#clientsTable tbody');
+        const noResultsDiv = document.getElementById('noResults');
+        const searchBar = document.getElementById('searchBar');
+        const clientsTable = document.getElementById('clientsTable');
+        const clientDetailsModal = document.getElementById('clientDetailsModal');
+        const closeModalButton = document.querySelector('.close-button');
+        const modalClientName = document.getElementById('modalClientName');
+        const modalClientDetails = document.getElementById('modalClientDetails');
+        const birthdayStatusElement = document.getElementById('birthdayStatus');
+        const loadingMessage = document.getElementById('loadingMessage');
+
+        // URL do Google Planilhas - Use a URL que você publicou como CSV!
+        const GOOGLE_SHEETS_CSV_URL = 'https://docs.google.com/document/d/e/2PACX-1vTjkrAfztH7XCAlIfxTR_Wbr_m6P2o-Z8dVQtgYnclORIdTATG0xoRGGBWOid_3PSZiWxo0MTVgbEvN/pub';
+
+        let allClientsData = []; 
+
+        function parseCSVData(csvText) {
+            console.log("Iniciando parseamento CSV...");
+            console.log("Conteúdo CSV bruto recebido (primeiros 500 chars):", csvText.substring(0, 500) + "..."); 
+
+            const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            if (lines.length === 0) {
+                console.warn("CSV está vazio ou não tem linhas válidas após trim/filter.");
+                return [];
+            }
+
+            const headers = lines[0].split(',').map(header => header.trim());
+            console.log("Cabeçalhos detectados:", headers);
+            const clients = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(value => value.trim());
+                if (values.length !== headers.length) {
+                    console.warn(`Linha ${i + 1} ignorada: número de valores (${values.length}) não corresponde ao número de cabeçalhos (${headers.length}). Linha: "${lines[i]}"`);
+                    continue; // Pula linhas mal formatadas
+                }
+
+                const client = {
+                    comissoes: [], // Não é preenchido automaticamente pelo CSV simples
+                    dependentes: [], // Não é preenchido automaticamente pelo CSV simples
+                    status: "Ativo", 
+                    timestamp: Date.now() 
+                };
+
+                headers.forEach((header, index) => {
+                    const value = values[index];
+                    switch (header.toLowerCase()) {
+                        case 'segurado':
+                        case 'nome completo':
+                        case 'nomecliente':
+                            client.segurado = value;
+                            client.nomeCompleto = value;
+                            client.nomeCliente = value;
+                            break;
+                        case 'telefone':
+                        case 'fonecelular':
+                            client.foneCelular = value;
+                            break;
+                        case 'nascimento':
+                        case 'datanascimento':
+                            client.nascimento = value;
+                            break;
+                        case 'email':
+                            client.email = value;
+                            break;
+                        case 'documento':
+                            client.documento = value;
+                            break;
+                        case 'cpf':
+                            client.cpf = value;
+                            break;
+                        case 'mae':
+                            client.mae = value;
+                            break;
+                        case 'tipo':
+                            client.tipo = value;
+                            break;
+                        case 'plano':
+                            client.plano = value;
+                            break;
+                        case 'carteirinha':
+                            client.carteirinha = value;
+                            break;
+                        case 'cep':
+                            client.cep = value;
+                            break;
+                        case 'endereco':
+                            client.endereco = value;
+                            break;
+                        case 'bairro':
+                            client.bairro = value;
+                            break;
+                        case 'cidade':
+                            client.cidade = value;
+                            break;
+                        case 'uf':
+                            client.uf = value;
+                            break;
+                        // Adicione mais mapeamentos se houver outras colunas relevantes em sua planilha
+                    }
+                });
+                clients.push(client);
+            }
+            console.log("Parseamento CSV concluído. Número de clientes encontrados:", clients.length);
+            return clients;
         }
 
-        // Nova função para parsear o formato de texto personalizado
-        function parseCustomTextData(text) {
-            const clients = [];
-            // Divide o texto em blocos, onde cada bloco começa com "Segurado:" ou "Código empresa:"
-            const rawBlocks = text.split(/\n(?=(?:Código empresa:|Segurado:))/);
+        function populateTable(clientsData) {
+            console.log("Iniciando populateTable com", clientsData.length, "clientes.");
+            clientsTableBody.innerHTML = ''; 
+            if (clientsData.length === 0) {
+                clientsTableBody.innerHTML = '<tr><td colspan="4" class="no-data">Nenhum dado de cliente encontrado. Verifique a Planilha do Google ou o formato do CSV.</td></tr>'; 
+                console.log("Nenhum dado de cliente para popular a tabela.");
+                return;
+            }
+            
+            allClientsData = [...clientsData].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); 
+            console.log("Dados de clientes após ordenação:", allClientsData);
 
-            let currentClient = {};
-            let currentCompanyCode = ''; // Variável para armazenar o código da empresa para o próximo segurado, se aplicável
+            allClientsData.forEach((client, index) => {
+                const row = clientsTableBody.insertRow();
+                const nameCell = row.insertCell();
+                nameCell.textContent = client.segurado || client.nomeCliente || 'N/A';
+                nameCell.style.fontWeight = 'bold';
+                nameCell.onclick = () => showClientDetails(client); 
+                row.insertCell().textContent = client.foneCelular || 'N/A';
+                row.insertCell().textContent = client.nascimento || 'N/A';
+                row.insertCell().textContent = client.email || 'N/A';
+            });
 
-            rawBlocks.forEach(block => {
-                block = block.trim();
-                if (!block) return; // Ignora blocos vazios
+            searchBar.style.display = 'block';
+            clientsTable.style.display = 'table';
+            checkBirthdays(allClientsData); 
+            console.log("Tabela populada e visível.");
+        }
 
-                let lines = block.split('\n').map(line => line.trim()).filter(line => line !== '');
+        function showClientDetails(client) {
+            console.log("Exibindo detalhes do cliente:", client.segurado || client.nomeCliente);
+            modalClientName.textContent = client.segurado || 'N/A';
 
-                if (lines.length === 0) return;
-
-                // Verifica se o bloco começa com "Código empresa:"
-                if (lines[0].startsWith("Código empresa:")) {
-                    currentCompanyCode = lines[0].substring("Código empresa:".length).trim();
-                    // Se houver mais linhas no bloco, assume que a próxima é um "Segurado:"
-                    // e remove a linha do código da empresa para processamento subsequente.
-                    if (lines.length > 1 && lines[1].startsWith("Segurado:")) {
-                         lines = lines.slice(1);
-                    } else {
-                         // Se o bloco é SÓ o código da empresa, ou o Segurado não está imediatamente depois,
-                         // apenas define o código e espera o próximo bloco "Segurado:".
-                         // Não cria um cliente ainda.
-                         return; // Continua para o próximo bloco rawBlocks
-                    }
-                }
+            let detailsHtml = `
+                <p><strong>Documento:</strong> ${client.documento || ''}</p>
+                <p><strong>Email:</strong> ${client.email || ''}</p>
+                <p><strong>Telefone Celular:</strong> ${client.foneCelular || ''}</p>
                 
-                // Se a primeira linha do bloco é "Segurado:", inicia um novo cliente
-                if (lines[0].startsWith("Segurado:")) {
-                    // Se já estamos processando um cliente e este é um novo "Segurado:",
-                    // significa que o cliente anterior está completo.
-                    if (Object.keys(currentClient).length > 0) {
-                        clients.push(currentClient);
-                    }
-                    currentClient = {}; // Reinicia o objeto do cliente atual
-                    if (currentCompanyCode) {
-                        currentClient['Código empresa'] = currentCompanyCode; // Associa o código da empresa
-                        currentCompanyCode = ''; // Limpa para o próximo bloco
-                    }
+                <h3 class="section-title">Endereço</h3>
+                <p><strong>CEP:</strong> ${client.cep || ''}</p>
+                <p><strong>Endereço:</strong> ${client.endereco || ''}</p>
+                <p><strong>Bairro:</strong> ${client.bairro || ''}</p>
+                <p><strong>Cidade/UF:</strong> ${client.cidade || ''} / ${client.uf || ''}</p>
+            `;
 
-                    currentClient['Segurado'] = lines[0].substring("Segurado:".length).trim();
-                    
-                    let lineIndex = 1; // Começa a processar as linhas a partir da segunda linha do bloco
+            detailsHtml += '<h3 class="section-title">Dados Pessoais e Dependentes</h3><ul>';
+            
+            detailsHtml += `
+                <li>
+                    <p><strong>Nome:</strong> ${client.nomeCliente || ''} (Tipo: ${client.tipo || 'Titular'})</p>
+                    <p><strong>CPF:</strong> ${client.cpf || ''}</p>
+                    <p><strong>Mãe:</strong> ${client.mae || ''}</p>
+                    <p><strong>Nascimento:</strong> ${client.nascimento || ''}</p>
+                    <p><strong>Plano:</strong> ${client.plano || ''}</p>
+                    <p><strong>Carteirinha:</strong> ${client.carteirinha || ''}</p>
+                </li>
+            `;
 
-                    while (lineIndex < lines.length) {
-                        const line = lines[lineIndex];
+            if (client.dependentes && client.dependentes.length > 0) {
+                client.dependentes.forEach((dependent, depIndex) => {
+                    detailsHtml += `
+                        <li>
+                            <p><strong>Dependente ${depIndex + 1}:</strong></p>
+                            <p>Nome: ${dependent.nome || 'N/A'} (Tipo: ${dependent.tipo || 'N/A'})</p>
+                            <p>CPF: ${dependent.cpf || 'N/A'}</p>
+                            <p>Mãe: ${dependent.mae || 'N/A'}</p>
+                            <p>Nascimento: ${dependent.nascimento || 'N/A'}</p>
+                            <p>Plano: ${dependent.plano || 'N/A'}</p>
+                            <p>Carteirinha: ${dependent.carteirinha || 'N/A'}</p>
+                        </li>
+                    `;
+                });
+            } else {
+                 detailsHtml += '<li><p>Nenhum dado de dependente encontrado (o parser CSV simples não inclui detalhes de dependentes).<br>Se você precisa de dependentes, a planilha precisa ter uma coluna JSON para eles, ou considerar outro formato de dados.</p></li>';
+            }
+            detailsHtml += '</ul>';
 
-                        if (line.startsWith("Documento:")) {
-                            currentClient['Documento'] = line.substring("Documento:".length).trim();
-                        } else if (line.startsWith("Email:")) {
-                            currentClient['Email'] = line.substring("Email:".length).trim();
-                        } else if (line.startsWith("Fone celular:")) {
-                            currentClient['Fone celular'] = line.substring("Fone celular:".length).trim();
-                        } else if (line.startsWith("Fone residencial:")) {
-                            currentClient['Fone residencial'] = line.substring("Fone residencial:".length).trim();
-                        } 
-                        // Bloco de Endereço (CEP, Endereço, etc.)
-                        else if (line.startsWith("CEP\tEndereço\tBairro\tCidade\tUF")) {
-                            if (lines[lineIndex + 1]) { // Verifica se a próxima linha existe e contém os dados
-                                const addressParts = lines[lineIndex + 1].split('\t').map(p => p.trim());
-                                currentClient['CEP'] = addressParts[0] || '';
-                                currentClient['Endereço'] = addressParts[1] || '';
-                                currentClient['Bairro'] = addressParts[2] || '';
-                                currentClient['Cidade'] = addressParts[3] || '';
-                                currentClient['UF'] = addressParts[4] || '';
-                                lineIndex++; // Pula a linha com os dados de endereço
-                            }
-                        } 
-                        // Bloco de Membros (Nome, Mãe, CPF, etc. - Titular e Dependentes)
-                        else if (line.startsWith("Nome\tMãe\tCPF\tTipo\tNasc\tPlano\tCarteirinha")) {
-                            let memberCount = 0;
-                            // Continua lendo as linhas de membros até encontrar um novo bloco ou o fim
-                            while (lineIndex + 1 < lines.length &&
-                                   !lines[lineIndex + 1].startsWith("Segurado:") &&
-                                   !lines[lineIndex + 1].startsWith("Código empresa:") &&
-                                   !lines[lineIndex + 1].startsWith("Parcela\t") && // Adicionado para parar em "Parcela"
-                                   !lines[lineIndex + 1].startsWith("Comissão:") && // Adicionado para parar em "Comissão"
-                                   lines[lineIndex + 1].split('\t').length > 1) { // Garante que a linha é de dados tabulados
-                                
-                                const memberData = lines[lineIndex + 1].split('\t').map(p => p.trim());
-                                if (memberData.length >= 7) { // Verifica se há campos suficientes
-                                    if (memberCount === 0) { // É o membro principal (Titular)
-                                        currentClient['Nome Completo'] = memberData[0] || '';
-                                        currentClient['Mãe'] = memberData[1] || '';
-                                        currentClient['CPF'] = memberData[2] || '';
-                                        currentClient['Tipo'] = memberData[3] || '';
-                                        currentClient['Nascimento'] = memberData[4] || '';
-                                        currentClient['Plano'] = memberData[5] || '';
-                                        currentClient['Carteirinha'] = memberData[6] || '';
-                                    } else { // São Dependentes
-                                        if (!currentClient['Dependentes']) {
-                                            currentClient['Dependentes'] = [];
-                                        }
-                                        currentClient['Dependentes'].push({
-                                            'Nome': memberData[0] || '',
-                                            'Mãe': memberData[1] || '',
-                                            'CPF': memberData[2] || '',
-                                            'Tipo': memberData[3] || '',
-                                            'Nascimento': memberData[4] || '',
-                                            'Plano': memberData[5] || '',
-                                            'Carteirinha': memberData[6] || ''
-                                        });
-                                    }
-                                }
-                                memberCount++;
-                                lineIndex++; // Avança para a próxima linha de membro
-                            }
+            if (client.comissoes && client.comissoes.length > 0) {
+                detailsHtml += '<h3 class="section-title">Detalhes das Comissões</h3><ul>';
+                client.comissoes.forEach((comm) => {
+                    detailsHtml += `
+                        <li>
+                            <p><strong>Parcela ${comm.parcela}:</strong> Valor: ${comm.valor || 'N/A'}, Taxa: ${comm.taxa || 'N/A'}</p>
+                            <p>Comissão: ${comm.comissaoPercentual || 'N/A'}, Vencimento: ${comm.vencimento || 'N/A'}</p>
+                            <p>Status: ${comm.statusComissao || 'N/A'}</p> 
+                        </li>
+                    `;
+                });
+                detailsHtml += '</ul>';
+            } else {
+                detailsHtml += '<h3 class="section-title">Detalhes das Comissões</h3><p>Nenhuma informação de comissão encontrada (o parser CSV simples não inclui detalhes de comissões).<br>Se você precisa de comissões, a planilha precisa ter uma coluna JSON para elas, ou considerar outro formato de dados.</p>';
+            }
+
+            modalClientDetails.innerHTML = detailsHtml;
+            clientDetailsModal.style.display = 'block'; 
+        }
+
+        closeModalButton.onclick = function() { 
+            clientDetailsModal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == clientDetailsModal) {
+                clientDetailsModal.style.display = 'none';
+            }
+        }
+
+        function checkBirthdays(clients) {
+            console.log("Verificando aniversariantes...");
+            birthdayStatusElement.style.display = 'block'; 
+            birthdayStatusElement.textContent = 'Verificando aniversariantes do dia...'; 
+
+            const today = new Date();
+            const currentMonth = today.getMonth() + 1; 
+            const currentDay = today.getDate();
+            let birthdayClients = [];
+
+            clients.forEach(client => {
+                if (client.nascimento) {
+                    const parts = client.nascimento.split('/');
+                    if (parts.length >= 2) {
+                        const birthDay = parseInt(parts[0]);
+                        const birthMonth = parseInt(parts[1]);
+
+                        if (birthDay === currentDay && birthMonth === currentMonth) {
+                            birthdayClients.push({
+                                nome: client.nomeCliente || client.segurado, 
+                                telefone: client.foneCelular
+                            });
                         }
-                        // Lidar com blocos de 'Parcela' (se existirem e se necessário exibir)
-                        // Para este exemplo, não estamos extraindo 'Parcela' para simplificar o display.
-                        // Você pode adicionar lógica aqui se precisar.
-
-                        lineIndex++; // Avança para a próxima linha do bloco atual
                     }
                 }
             });
 
-            // Adiciona o último cliente processado (se houver) à lista final
-            if (Object.keys(currentClient).length > 0) {
-                clients.push(currentClient);
-            }
-            return clients;
-        }
-
-        // Função para exibir os dados do cliente
-        function displayClientData(client) {
-            const resultDiv = document.getElementById('result');
-            let infoHtml = `<div class="client-info">`;
-
-            infoHtml += `<p><strong>Nome (Segurado):</strong> ${client['Segurado'] || 'N/A'}</p>`;
-            infoHtml += `<p><strong>Documento:</strong> ${client['Documento'] || 'N/A'}</p>`;
-            infoHtml += `<p><strong>Email:</strong> ${client['Email'] || 'N/A'}</p>`;
-            infoHtml += `<p><strong>Telefone:</strong> ${client['Fone celular'] || client['Fone residencial'] || 'N/A'}</p>`; // Prioriza celular
-
-            if (client['Plano']) {
-                infoHtml += `<p><strong>Plano:</strong> ${client['Plano']}</p>`;
-            }
-            
-            // Detalhes de Endereço
-            if (client['CEP']) {
-                infoHtml += `<p><strong>Endereço:</strong> ${client['Endereço'] || 'N/A'}, ${client['Bairro'] || 'N/A'}, ${client['Cidade'] || 'N/A'} - ${client['UF'] || 'N/A'} CEP: ${client['CEP'] || 'N/A'}</p>`;
-            }
-
-            // Detalhes adicionais do Titular (se diferentes do Segurado principal)
-            if (client['Nome Completo'] && client['Nome Completo'] !== client['Segurado']) {
-                infoHtml += `<p><strong>Nome Completo (Titular):</strong> ${client['Nome Completo'] || 'N/A'}</p>`;
-            }
-            if (client['Mãe']) {
-                infoHtml += `<p><strong>Mãe:</strong> ${client['Mãe'] || 'N/A'}</p>`;
-            }
-            if (client['CPF']) {
-                infoHtml += `<p><strong>CPF:</strong> ${client['CPF'] || 'N/A'}</p>`;
-            }
-            if (client['Tipo']) {
-                infoHtml += `<p><strong>Tipo:</strong> ${client['Tipo'] || 'N/A'}</p>`;
-            }
-            if (client['Nascimento']) {
-                infoHtml += `<p><strong>Data de Nascimento:</strong> ${client['Nascimento'] || 'N/A'}</p>`;
-            }
-            if (client['Carteirinha']) {
-                infoHtml += `<p><strong>Carteirinha:</strong> ${client['Carteirinha'] || 'N/A'}</p>`;
-            }
-            if (client['Código empresa']) {
-                infoHtml += `<p><strong>Código Empresa:</strong> ${client['Código empresa'] || 'N/A'}</p>`;
-            }
-
-            // Exibir Dependentes
-            if (client['Dependentes'] && client['Dependentes'].length > 0) {
-                infoHtml += `<h3>Dependentes:</h3><ul>`;
-                client['Dependentes'].forEach(dep => {
-                    infoHtml += `<li><strong>Nome:</strong> ${dep['Nome'] || 'N/A'} (CPF: ${dep['CPF'] || 'N/A'}, Tipo: ${dep['Tipo'] || 'N/A'}, Plano: ${dep['Plano'] || 'N/A'})</li>`;
+            if (birthdayClients.length > 0) {
+                let alertMessage = "🎉 Hoje é aniversário de:\n\n";
+                let statusMessage = "🎉 Aniversariantes hoje: ";
+                const namesAndPhones = birthdayClients.map(bc => {
+                    const phone = bc.telefone && bc.telefone !== 'N/A' ? ` (Tel: ${bc.telefone})` : '';
+                    return `${bc.nome}${phone}`;
                 });
-                infoHtml += `</ul>`;
-            }
+                alertMessage += namesAndPhones.join('\n');
+                statusMessage += namesAndPhones.join(', ') + " 🎉";
 
-            infoHtml += `</div>`;
-            resultDiv.innerHTML += infoHtml;
-        }
-
-        // Função principal de busca
-        function searchClient() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = ''; // Limpa resultados anteriores
-
-            if (!searchTerm) {
-                resultDiv.innerHTML = '<p class="error">Por favor, digite um documento ou nome para buscar.</p>';
-                return;
-            }
-
-            const foundClients = clientsData.filter(client =>
-                (client['Documento'] && client['Documento'].toLowerCase().includes(searchTerm)) ||
-                (client['Segurado'] && client['Segurado'].toLowerCase().includes(searchTerm)) ||
-                (client['Nome Completo'] && client['Nome Completo'].toLowerCase().includes(searchTerm))
-            );
-
-            if (foundClients.length > 0) {
-                resultDiv.innerHTML = '<h2>Clientes Encontrados:</h2>';
-                foundClients.forEach(client => displayClientData(client));
+                birthdayStatusElement.textContent = statusMessage;
+                alert(alertMessage); 
             } else {
-                resultDiv.innerHTML = '<p>Nenhum cliente encontrado com o termo de busca.</p>';
+                birthdayStatusElement.textContent = 'Nenhum aniversariante encontrado para hoje.';
+            }
+            console.log('Verificação de aniversário concluída. Aniversariantes encontrados:', birthdayClients.length);
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchBar');
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById('clientsTable');
+            const tr = table.getElementsByTagName('tr');
+            let foundAny = false;
+
+            for (let i = 1; i < tr.length; i++) { 
+                const row = tr[i];
+                let rowContainsFilter = false;
+                const tds = row.getElementsByTagName('td');
+                for (let j = 0; j < tds.length; j++) {
+                    const td = tds[j];
+                    if (td.textContent.toLowerCase().includes(filter)) {
+                        rowContainsFilter = true;
+                        break;
+                    }
+                }
+                if (rowContainsFilter) {
+                    row.style.display = '';
+                    foundAny = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+
+            if (foundAny) {
+                noResultsDiv.style.display = 'none';
+            } else {
+                noResultsDiv.style.display = 'block';
             }
         }
 
-        // Carregar os dados quando a página é completamente carregada
-        document.addEventListener('DOMContentLoaded', fetchAndParseData);
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("DOM completamente carregado. Iniciando carregamento de dados.");
+            loadingMessage.style.display = 'block'; 
+            searchBar.style.display = 'none';
+            clientsTable.style.display = 'none';
+
+            let dataFromCentralSource = null;
+            try {
+                console.log("Tentando buscar dados de:", GOOGLE_SHEETS_CSV_URL);
+                const response = await fetch(GOOGLE_SHEETS_CSV_URL);
+                if (!response.ok) {
+                    console.error(`Erro na resposta da rede: ${response.status} ${response.statusText}`);
+                    throw new Error(`Erro ao carregar do Google Planilhas: ${response.statusText}`);
+                }
+                const csvText = await response.text();
+                console.log("Dados CSV brutos recebidos (primeiros 100 chars):", csvText.substring(0, 100) + "...");
+                
+                dataFromCentralSource = parseCSVData(csvText); 
+                console.log("Dados carregados e parseados:", dataFromCentralSource);
+            } catch (error) {
+                console.error("ERRO CRÍTICO ao carregar ou parsear dados:", error);
+                alert("Erro ao carregar os dados centralizados dos clientes. Por favor, verifique a URL da planilha, se ela está publicada corretamente para a web como CSV, ou sua conexão com a internet. Detalhes no console do navegador.");
+            } finally {
+                loadingMessage.style.display = 'none'; 
+                console.log("Mensagem de carregamento escondida.");
+            }
+
+            if (dataFromCentralSource && dataFromCentralSource.length > 0) {
+                allClientsData = dataFromCentralSource;
+            } else {
+                allClientsData = []; 
+                console.log("Nenhum dado válido para exibir. allClientsData está vazio.");
+                alert("Nenhum dado de cliente foi encontrado na fonte centralizada. A tabela está vazia ou os dados não puderam ser parseados. Verifique o console para mais detalhes.");
+            }
+
+            populateTable(allClientsData);
+            console.log("Fim do bloco DOMContentLoaded.");
+        });
+
     </script>
+
 </body>
 </html>
