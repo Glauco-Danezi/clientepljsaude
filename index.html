@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clientes - Leitura Google Planilhas</title>
@@ -54,6 +55,15 @@ function parseCSV(text) {
   });
 }
 
+  Papa.parse(text, {
+  header: true,
+  skipEmptyLines: true,
+  complete: function(results) {
+    allClients = results.data.map(...);
+    renderTable(allClients);
+  }
+});
+  
 function renderTable(data) {
   const table = document.getElementById('clientsTable');
   const tbody = table.querySelector('tbody');
